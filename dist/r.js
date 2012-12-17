@@ -2035,8 +2035,8 @@ var requirejs, require, define;
      * return a value to define the module corresponding to the first argument's
      * name.
      */
-    define = function (name, deps, callback) {
-        var node, context;
+    define = function (name, deps, callback, context) {
+        var node;
 
         //Allow for anonymous modules
         if (typeof name !== 'string') {
@@ -2283,6 +2283,13 @@ var requirejs, require, define;
         if (exists(url)) {
             contents = fs.readFileSync(url, 'utf8');
 
+            var oldDefine = requirejsVars.define;
+
+            requirejsVars.define = function(){
+                var args = [].splice.call(arguments,0);
+                oldDefine.call(this, args[0], args[1], args[2], context);
+            };
+
             contents = req.makeNodeWrapper(contents);
             try {
                 vm.runInThisContext(contents, fs.realpathSync(url));
@@ -2294,6 +2301,9 @@ var requirejs, require, define;
                 err.fileName = url;
                 return req.onError(err);
             }
+
+            requirejsVars.define = oldDefine;
+
         } else {
             def(moduleName, function () {
                 //Get the original name, since relative requires may be
@@ -14893,7 +14903,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger'], function (exports, MOZ_
                   case "do":
                     return new AST_Do({
                         body: in_loop(statement),
-                        condition: (expect_token("keyword", "while"), tmp = parenthesised(), semicolon(), 
+                        condition: (expect_token("keyword", "while"), tmp = parenthesised(), semicolon(),
                         tmp)
                     });
 
@@ -14915,7 +14925,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger'], function (exports, MOZ_
                   case "return":
                     if (S.in_function == 0) croak("'return' outside of function");
                     return new AST_Return({
-                        value: is("punc", ";") ? (next(), null) : can_insert_semicolon() ? null : (tmp = expression(true), 
+                        value: is("punc", ";") ? (next(), null) : can_insert_semicolon() ? null : (tmp = expression(true),
                         semicolon(), tmp)
                     });
 
